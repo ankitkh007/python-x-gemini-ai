@@ -92,5 +92,6 @@ target/
 # images
 *.png
 
-# VS Code temp runner files
+# VS Code
+.vscode/
 tempCodeRunnerFile.py
