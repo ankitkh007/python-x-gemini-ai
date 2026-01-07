@@ -16,18 +16,31 @@ from PIL import Image
 
 
 ## Testing Multimodal response
-image = Image.open("projects\images\sigma_boys.jpeg")
-response = client.models.generate_content(
+# image = Image.open("projects\images\sigma_boys.jpeg")
+# response = client.models.generate_content(
+#     model="gemini-2.5-flash",
+#     contents=[image, "Describe this image."],
+#     config=types.GenerateContentConfig(
+#         system_instruction="Response should be within 50 words. "
+#         "Respond like you're roasting the subjects."
+#         "No mercy Pure Roasting!",
+#         temperature=0.5,
+#     ),
+# )
+
+# print("Gemini response: ")
+# print("----------------------------------------")
+# print(response.text)
+
+## Testing Streaming responses
+response = client.models.generate_content_stream(
     model="gemini-2.5-flash",
-    contents=[image, "Describe this image."],
+    contents="Explain how AI works!",
     config=types.GenerateContentConfig(
-        system_instruction="Response should be within 50 words. "
-        "Respond like you're roasting the subjects."
-        "No mercy Pure Roasting!",
+        system_instruction="Response should be within 500 words. ",
         temperature=0.5,
     ),
 )
 
-print("Gemini response: ")
-print("----------------------------------------")
-print(response.text)
+for chunk in response:
+    print(chunk.text, end="------------")
