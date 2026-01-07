@@ -89,5 +89,8 @@ target/
 # Virtual environment
 .venv/
 
-#weather_chart_image
+# images
 *.png
+
+# VS Code temp runner files
+tempCodeRunnerFile.py
