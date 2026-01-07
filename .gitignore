@@ -91,6 +91,7 @@ target/
 
 # images
 *.png
+*.jpeg
 
 # VS Code
 .vscode/
