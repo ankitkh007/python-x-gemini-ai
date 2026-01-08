@@ -99,3 +99,6 @@ tempCodeRunnerFile.py
 
 #Excel files
 *.xlsx
+
+#PDF files
+*.PDF
