@@ -19,7 +19,7 @@ import io
 file_path = pathlib.Path("projects\pdfs\Report.pdf")
 file_data = io.BytesIO(file_path.read_bytes())
 
-## Using Upload files API from Gemini
+## Using Upload files API from Gemini; uploaded file auto deletes every 48 hrs
 pdf = client.files.upload(file=file_data, config={"mime_type": "application/pdf"})
 
 prompt = "Summarize this report and generate a conclusion along with suggestion required if any."
