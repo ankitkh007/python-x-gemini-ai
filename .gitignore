@@ -96,3 +96,6 @@ target/
 # VS Code
 .vscode/
 tempCodeRunnerFile.py
+
+#Excel files
+*.xlsx
