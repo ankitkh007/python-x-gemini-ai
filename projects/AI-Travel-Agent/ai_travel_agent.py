@@ -29,7 +29,10 @@ def execute_step(step):
                 "items": ExecuteSteps.model_json_schema(),
             },
             response_mime_type="application/json",
-            system_instruction="Answer within 30 words. Be specific to the point.",
+            system_instruction=""" You are simulating actions.
+                                Do NOT ask user for inputs.
+                                Describe actions hypothetically.
+                                """,
         ),
     )
     result = json.loads(response.text)
