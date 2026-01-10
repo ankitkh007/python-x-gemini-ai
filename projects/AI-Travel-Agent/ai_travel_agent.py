@@ -3,6 +3,8 @@ from google.genai import types
 from pydantic import BaseModel, Field
 import json
 
+grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
 
 ## Schema for structured output
 class PlanSteps(BaseModel):
@@ -15,14 +17,17 @@ class ExecuteSteps(BaseModel):
         description="Action performed for the particular task."
     )
     summary: str = Field(description="Summary of the entire process.")
+    used_search: bool = Field(
+        description="True if Google Search was used to complete this step, otherwise False."
+    )
 
 
 ## Adding memory so that our agent gets the context of what it has already done
-memory = [{"last_task": None, "summary": None}]
+memory = [{"last_task": None, "summary": None, "used_search": None}]
 
 
 def execute_step(step, memory):
-    prompt = f"""Last task done: {memory[-1]["last_task"]}, summary of last step executed: {memory[-1]["summary"]}.
+    prompt = f"""Last task done: {memory[-1]["last_task"]}, summary of last step executed: {memory[-1]["summary"]}, whether Google search was in the last step {memory[-1]["used_search"]}
                 Now execute this step: {step}. Describe what you did and summarize the result."""
     response = chat.send_message(
         prompt,
@@ -35,27 +40,40 @@ def execute_step(step, memory):
             system_instruction=""" You are simulating actions.
                                 Do NOT ask user for inputs.
                                 Describe actions hypothetically.
-                                """,
+                                
+                                Use Google Search ONLY if:
+                                - The task requires real-world or factual data
+                                - The information is not available from prior steps
+                                
+                                If Google Search is used:
+                                - set used_search = true
+                                Otherwise:
+                                - set used_search = false""",
+            tools=[grounding_tool],
         ),
     )
     result = json.loads(response.text)
 
-    k = 0
     ## Filtering the required result for our memory
     required_memory = {
         "last_task": result[0]["task_name"],
         "summary": result[0]["summary"],
+        "used_search": result[0]["used_search"],
     }
     memory.append(required_memory)
-    k += 1
 
-    if k == 1:
-        del memory[0]
+    ## Removes dummy dictionary after initial use
+    dict_to_remove = {"last_task": None, "summary": None}
+    if dict_to_remove in memory:
+        memory.remove(dict_to_remove)
 
     print("--------------------------------------")
     print("Ongoing Task : ", result[0]["task_name"])
     print("Action Performed: ", result[0]["action_performed"])
     print("Summary: ", result[0]["summary"])
+
+    if result[0]["used_search"]:
+        print("🔍 Google Search was used in this step")
     print("--------------------------------------")
 
 
