@@ -17,10 +17,13 @@ class ExecuteSteps(BaseModel):
     summary: str = Field(description="Summary of the entire process.")
 
 
-def execute_step(step):
-    prompt = (
-        f"Execute this step: {step}. Describe what you did and summarize the result."
-    )
+## Adding memory so that our agent gets the context of what it has already done
+memory = [{"last_task": None, "summary": None}]
+
+
+def execute_step(step, memory):
+    prompt = f"""Last task done: {memory[-1]["last_task"]}, summary of last step executed: {memory[-1]["summary"]}.
+                Now execute this step: {step}. Describe what you did and summarize the result."""
     response = chat.send_message(
         prompt,
         config=types.GenerateContentConfig(
@@ -36,6 +39,13 @@ def execute_step(step):
         ),
     )
     result = json.loads(response.text)
+
+    ## Filtering the required result for our memory
+    required_memory = {
+        "last_task": result[0]["task_name"],
+        "summary": result[0]["summary"],
+    }
+    memory.append(required_memory)
 
     print("--------------------------------------")
     print("Ongoing Task : ", result[0]["task_name"])
@@ -68,7 +78,7 @@ def run_agent():
     ##steps planning
     steps = plan_steps()
     for step in steps:
-        execute_step(step)
+        execute_step(step, memory)
     print("\n All Steps Completed. Have a Safe Journey!!")
 
 
