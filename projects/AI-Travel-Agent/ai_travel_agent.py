@@ -40,12 +40,17 @@ def execute_step(step, memory):
     )
     result = json.loads(response.text)
 
+    k = 0
     ## Filtering the required result for our memory
     required_memory = {
         "last_task": result[0]["task_name"],
         "summary": result[0]["summary"],
     }
     memory.append(required_memory)
+    k += 1
+
+    if k == 1:
+        del memory[0]
 
     print("--------------------------------------")
     print("Ongoing Task : ", result[0]["task_name"])
@@ -79,7 +84,7 @@ def run_agent():
     steps = plan_steps()
     for step in steps:
         execute_step(step, memory)
-    print("\n All Steps Completed. Have a Safe Journey!!")
+    print("\n All Steps Completed. Have a Safe Journey!! \n")
 
 
 if __name__ == "__main__":
