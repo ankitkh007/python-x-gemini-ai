@@ -26,9 +26,45 @@ class ExecuteSteps(BaseModel):
 memory = [{"last_task": None, "summary": None, "used_search": None}]
 
 
-def execute_step(step, memory):
-    prompt = f"""Last task done: {memory[-1]["last_task"]}, summary of last step executed: {memory[-1]["summary"]}, whether Google search was in the last step {memory[-1]["used_search"]}
-                Now execute this step: {step}. Describe what you did and summarize the result."""
+## Phase 1(Execute Steps)
+def reason_and_search(step, memory):
+    prompt = f"""
+            Last task done: {memory[-1]["last_task"]}, summary: {memory[-1]["summary"]}
+        
+            Now execute this step: {step}
+        
+            Rules:
+            - Use Google Search ONLY if real-world data is required
+            - If search is used, mention it clearly
+            - Do NOT output JSON
+            - Explain briefly what you did
+            """
+
+    response = chat.send_message(
+        prompt,
+        config=types.GenerateContentConfig(
+            tools=[grounding_tool],
+        ),
+    )
+
+    return response.text
+
+
+## Phase 2(Execute Steps)
+def structure_result(step, reasoning_text):
+    prompt = f"""
+                Based on the reasoning below, generate a JSON output
+                matching this schema:
+                
+                - task_name
+                - action_performed
+                - summary
+                - used_search (true/false)
+                
+                Reasoning:
+                {reasoning_text}
+                """
+
     response = chat.send_message(
         prompt,
         config=types.GenerateContentConfig(
@@ -37,22 +73,18 @@ def execute_step(step, memory):
                 "items": ExecuteSteps.model_json_schema(),
             },
             response_mime_type="application/json",
-            system_instruction=""" You are simulating actions.
-                                Do NOT ask user for inputs.
-                                Describe actions hypothetically.
-                                
-                                Use Google Search ONLY if:
-                                - The task requires real-world or factual data
-                                - The information is not available from prior steps
-                                
-                                If Google Search is used:
-                                - set used_search = true
-                                Otherwise:
-                                - set used_search = false""",
-            tools=[grounding_tool],
         ),
     )
-    result = json.loads(response.text)
+
+    return json.loads(response.text)
+
+
+def execute_step(step, memory):
+    # ---- PHASE 1 ----
+    reasoning_text = reason_and_search(step, memory)
+
+    # ---- PHASE 2 ----
+    result = structure_result(step, reasoning_text)
 
     ## Filtering the required result for our memory
     required_memory = {
@@ -63,7 +95,7 @@ def execute_step(step, memory):
     memory.append(required_memory)
 
     ## Removes dummy dictionary after initial use
-    dict_to_remove = {"last_task": None, "summary": None}
+    dict_to_remove = {"last_task": None, "summary": None, "used_search": None}
     if dict_to_remove in memory:
         memory.remove(dict_to_remove)
 
@@ -117,7 +149,7 @@ if __name__ == "__main__":
     modified_prompt = f"""You're an expert virtual travel agent, having a very high experience of planning railway journeys in India.
     Your goal is {goal}. For know you just acknowledge the goal and going forward I'll ask you to create the plan and execute those plans."""
 
-    chat = client.chats.create(model="gemini-2.5-flash-lite")
+    chat = client.chats.create(model="gemini-2.5-flash")
 
     chat.send_message(modified_prompt)
 
