@@ -113,8 +113,17 @@ def structure_result(reasoning_text):
 
     ## Error handling
     if response is None:
-        raise RuntimeError("Structuring Failed!")
-    return json.loads(response.text)
+        return [
+            {
+                "task_name": "Unknown",
+                "action_performed": "Structuring failed",
+                "summary": "This step could not be structured due to an API issue.",
+                "used_search": False,
+            }
+        ]
+
+    else:
+        return json.loads(response.text)
 
 
 ## Steps Execution in 2 phases
