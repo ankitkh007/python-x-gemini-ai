@@ -31,19 +31,19 @@ def reason_and_search(step, memory):
     prompt = f"""
             Last task done: {memory[-1]["last_task"]}, summary: {memory[-1]["summary"]}
         
-            Now execute this step: {step}
-        
-            Rules:
-            - Use Google Search ONLY if real-world data is required
-            - If search is used, mention it clearly
-            - Do NOT output JSON
-            - Explain briefly what you did
+            Now execute this step: {step}. Explain briefly what you did
             """
 
     response = chat.send_message(
         prompt,
         config=types.GenerateContentConfig(
             tools=[grounding_tool],
+            system_instruction="""You are simulating actions.Do NOT ask user for inputs.Describe actions hypothetically.
+                                    - Do NOT output JSON 
+                                    Use Google Search ONLY if: 
+                                    - The task requires real-world or factual data 
+                                    - The information is not available from prior steps. 
+                                    If search is used, mention it clearly in the summary.""",
         ),
     )
 
@@ -51,7 +51,7 @@ def reason_and_search(step, memory):
 
 
 ## Phase 2(Execute Steps)
-def structure_result(step, reasoning_text):
+def structure_result(reasoning_text):
     prompt = f"""
                 Based on the reasoning below, generate a JSON output
                 matching this schema:
@@ -79,12 +79,13 @@ def structure_result(step, reasoning_text):
     return json.loads(response.text)
 
 
+## Steps Execution in 2 phases
 def execute_step(step, memory):
     # ---- PHASE 1 ----
     reasoning_text = reason_and_search(step, memory)
 
     # ---- PHASE 2 ----
-    result = structure_result(step, reasoning_text)
+    result = structure_result(reasoning_text)
 
     ## Filtering the required result for our memory
     required_memory = {
@@ -92,6 +93,8 @@ def execute_step(step, memory):
         "summary": result[0]["summary"],
         "used_search": result[0]["used_search"],
     }
+
+    ## Saving required memory after every successful execution
     memory.append(required_memory)
 
     ## Removes dummy dictionary after initial use
@@ -109,6 +112,7 @@ def execute_step(step, memory):
     print("--------------------------------------")
 
 
+## Steps Planning
 def plan_steps():
     prompt = "Break the goal into clear, numbered steps."
     response = chat.send_message(
@@ -134,7 +138,12 @@ def run_agent():
     steps = plan_steps()
     for step in steps:
         execute_step(step, memory)
-    print("\n All Steps Completed. Have a Safe Journey!! \n")
+    print(
+        "\n************************ All Steps Completed. Have a Safe Journey!! ************************"
+    )
+    print(
+        "\n- - - - - - - - - - - - - - - - - - - - - - x-x-x - - - - - - - - - - - - - - - - - - - - - -"
+    )
 
 
 if __name__ == "__main__":
@@ -142,7 +151,7 @@ if __name__ == "__main__":
     print("Let's plan your journey........")
     source = input("Enter your Source: ")
     destination = input("Enter your Destination: ")
-    print("---------------------------------------------------")
+    print("--------------------------------------")
 
     goal = f"To Book a Railway ticket from {source} to {destination}."
 
