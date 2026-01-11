@@ -9,9 +9,9 @@ grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
 
 ## Centralized prompt+config Wrapper for effiecient API error handling
-def safe_send_message(chat, prompt, config, server_retries=2):
+def safe_send_message(chat, prompt, config=None, server_retries=2):
     try:
-        return chat.send_message(prompt=prompt, config=config)
+        return chat.send_message(message=prompt, config=config)
 
     except ClientError as e:
         if e.code == 429:
@@ -142,11 +142,11 @@ def execute_step(step, memory, chat):
         memory.remove(dict_to_remove)
 
     print("--------------------------------------")
-    print("Ongoing Task : ", result["task_name"])
-    print("Action Performed: ", result["action_performed"])
-    print("Summary: ", result["summary"])
+    print("\n🧭 Ongoing Task : ", result["task_name"])
+    print("\n⚙️ Action Performed: ", result["action_performed"])
+    print("\n📝 Summary: ", result["summary"])
 
-    if result[0]["used_search"]:
+    if result["used_search"]:
         print("🔍 Google Search was used in this step")
     print("--------------------------------------")
 
@@ -192,17 +192,17 @@ def run_agent(chat):
     for step in steps:
         execute_step(step, memory, chat)  ## individual step execution
     print(
-        "\n************************ All Steps Completed. Have a Safe Journey!! ************************"
+        "\n🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹"
     )
     print(
-        "\n- - - - - - - - - - - - - - - - - - - - - - x-x-x - - - - - - - - - - - - - - - - - - - - - -"
+        "\n- - - - - - - - - - - - - - - - - - -  ❌-❌-❌ - - - - - - - - - - - - - - - - - - - -"
     )
 
 
 if __name__ == "__main__":
-    print("Namaste, Welcome to Yatri-Mitra!!, Your AI Travel Agent.")
-    print("Let's plan your journey........")
-    source = input("Enter your Source: ")
+    print("Namaste🙏🏻 Welcome to Yatri-Mitra!!, Your AI Travel Agent.")
+    print("🔹Let's plan your journey........")
+    source = input("\nEnter your Source: ")
     destination = input("Enter your Destination: ")
     print("--------------------------------------")
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     modified_prompt = f"""You're an expert virtual travel agent, having a very high experience of planning railway journeys in India.
     Your goal is {goal}. For know you just acknowledge the goal and going forward I'll ask you to create the plan and execute those plans."""
 
-    chat = client.chats.create(model="gemini-2.5-flash")
+    chat = client.chats.create(model="gemini-2.5-flash-lite")
 
     chat.send_message(modified_prompt)
 
