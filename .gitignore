@@ -90,7 +90,6 @@ target/
 .venv/
 
 # images
-*.png
 *.jpeg
 
 # VS Code
