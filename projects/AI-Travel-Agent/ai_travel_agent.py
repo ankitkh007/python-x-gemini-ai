@@ -64,8 +64,7 @@ def reason_and_search(step, memory):
         
             Now execute this step: {step}. Explain briefly what you did
             """
-    config = (
-        types.GenerateContentConfig(
+    config =types.GenerateContentConfig(
             tools=[grounding_tool],
             system_instruction="""You are simulating actions.Do NOT ask user for inputs.Describe actions hypothetically.
                                 Never wait for or request user input.If information is missing, assume reasonable defaults.
@@ -74,8 +73,7 @@ def reason_and_search(step, memory):
                                     - The task requires real-world or factual data 
                                     - The information is not available from prior steps. 
                                     If search is used, mention it clearly in the summary.""",
-        ),
-    )
+        )
     response = safe_send_message(chat, prompt=prompt, config=config)  ## calling Wrapper
 
     ## Error handling
@@ -99,15 +97,13 @@ def structure_result(reasoning_text):
                 Reasoning:
                 {reasoning_text}
                 """
-    config = (
-        types.GenerateContentConfig(
+    config = types.GenerateContentConfig(
             response_json_schema={
                 "type": "array",
                 "items": ExecuteSteps.model_json_schema(),
             },
             response_mime_type="application/json",
-        ),
-    )
+        )
 
     response = safe_send_message(chat, prompt=prompt, config=config)  ## calling Wrapper
 
@@ -162,8 +158,7 @@ def execute_step(step, memory):
 ## Steps Planning
 def plan_steps():
     prompt = "Break the goal into clear, numbered steps."
-    config = (
-        types.GenerateContentConfig(
+    config = types.GenerateContentConfig(
             response_json_schema={
                 "type": "array",
                 "items": PlanSteps.model_json_schema(),
@@ -175,8 +170,7 @@ def plan_steps():
                                 Assume all required information is already available.
                                 Generate only executable, simulated steps.
                                 """,
-        ),
-    )
+        )
 
     response = safe_send_message(chat, prompt=prompt, config=config)  ## Calling Wrapper
 
