@@ -143,7 +143,7 @@ def execute_step(step, memory, chat):
 
     print("--------------------------------------")
     print("\n🧭 Ongoing Task : ", result["task_name"])
-    print("\n⚙️ Action Performed: ", result["action_performed"])
+    print("\n⚙️  Action Performed: ", result["action_performed"])
     print("\n📝 Summary: ", result["summary"])
 
     if result["used_search"]:
@@ -204,20 +204,20 @@ def run_agent(chat):
             print("⛔ Stopping further execution due to failure.")
             break
 
-        if execution_failed:
-            print(
-            "\n🛑 Journey planning could not be completed due to API limitations."
-            )
-            print(
-            "⚠️ Please retry after some time or switch to another model/API key."
-            )
-        else:
-            print(
-                "\n🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹"
-            )
-            print(
-                "\n- - - - - - - - - - - - - - - - - - -  ❌-❌-❌ - - - - - - - - - - - - - - - - - - - -"
-            )
+    if execution_failed:
+        print(
+        "\n🛑 Journey planning could not be completed due to API limitations."
+        )
+        print(
+        "⚠️ Please retry after some time or switch to another model/API key."
+        )
+    else:
+        print(
+            "\n🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹"
+        )
+        print(
+            "\n- - - - - - - - - - - - - - - - - - -  ❌-❌-❌ - - - - - - - - - - - - - - - - - - - -"
+        )
 
 
 if __name__ == "__main__":
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     modified_prompt = f"""You're an expert virtual travel agent, having a very high experience of planning railway journeys in India.
     Your goal is {goal}. For know you just acknowledge the goal and going forward I'll ask you to create the plan and execute those plans."""
 
-    chat = client.chats.create(model="gemini-2.5-flash-lite")
+    chat = client.chats.create(model="gemini-2.5-flash")
 
     chat.send_message(modified_prompt)
 
