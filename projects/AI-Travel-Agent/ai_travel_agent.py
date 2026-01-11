@@ -106,14 +106,13 @@ def structure_result(reasoning_text, chat):
 
     ## Error handling
     if response is None:
-        return [
-            {
+        return {
                 "task_name": "Unknown",
                 "action_performed": "Structuring failed",
                 "summary": "This step could not be structured due to an API issue.",
                 "used_search": False,
             }
-        ]
+    
 
     else:
         return json.loads(response.text)
@@ -143,9 +142,9 @@ def execute_step(step, memory, chat):
         memory.remove(dict_to_remove)
 
     print("--------------------------------------")
-    print("Ongoing Task : ", result[0]["task_name"])
-    print("Action Performed: ", result[0]["action_performed"])
-    print("Summary: ", result[0]["summary"])
+    print("Ongoing Task : ", result["task_name"])
+    print("Action Performed: ", result["action_performed"])
+    print("Summary: ", result["summary"])
 
     if result[0]["used_search"]:
         print("🔍 Google Search was used in this step")
