@@ -38,7 +38,7 @@ python-x-gemini-ai/
 ├── README.md
 ├── .env
 └── .gitignore
-
+```
 
 ## 📷 Sample Execution
 
