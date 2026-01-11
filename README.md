@@ -43,7 +43,7 @@ python-x-gemini-ai/
 ## 📷 Sample Execution
 
 ### Successful Execution
-![Agent Success](projects\images\agent_success.png)
+![Agent Success](projects/images/agent_success.png)
 
 ### Graceful Failure Handling
-![API Failure](projects\images\api_failure_handling.png)
+![API Failure](projects/images/api_failure_handling.png)
