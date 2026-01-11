@@ -58,7 +58,7 @@ memory = [{"last_task": None, "summary": None, "used_search": None}]
 
 
 ## Phase 1(Execute Steps)
-def reason_and_search(step, memory):
+def reason_and_search(step, memory, chat):
     prompt = f"""
             Last task done: {memory[-1]["last_task"]}, summary: {memory[-1]["summary"]}
         
@@ -74,17 +74,17 @@ def reason_and_search(step, memory):
                                     - The information is not available from prior steps. 
                                     If search is used, mention it clearly in the summary.""",
         )
-    response = safe_send_message(chat, prompt=prompt, config=config)  ## calling Wrapper
+    response = safe_send_message(chat=chat, prompt=prompt, config=config)  ## calling Wrapper
 
     ## Error handling
     if response is None:
-        return "Search failed. Proceed without external data."
+        return "Executed step without external search due to API issue. Assumed reasonable defaults."
 
     return response.text
 
 
 ## Phase 2(Execute Steps)
-def structure_result(reasoning_text):
+def structure_result(reasoning_text, chat):
     prompt = f"""
                 Based on the reasoning below, generate a JSON output
                 matching this schema:
@@ -98,14 +98,11 @@ def structure_result(reasoning_text):
                 {reasoning_text}
                 """
     config = types.GenerateContentConfig(
-            response_json_schema={
-                "type": "array",
-                "items": ExecuteSteps.model_json_schema(),
-            },
+            response_json_schema=ExecuteSteps.model_json_schema(),
             response_mime_type="application/json",
         )
 
-    response = safe_send_message(chat, prompt=prompt, config=config)  ## calling Wrapper
+    response = safe_send_message(chat=chat, prompt=prompt, config=config)  ## calling Wrapper
 
     ## Error handling
     if response is None:
@@ -123,18 +120,18 @@ def structure_result(reasoning_text):
 
 
 ## Steps Execution in 2 phases
-def execute_step(step, memory):
+def execute_step(step, memory, chat):
     # ---- PHASE 1 ----
-    reasoning_text = reason_and_search(step, memory)
+    reasoning_text = reason_and_search(step, memory, chat)
 
     # ---- PHASE 2 ----
-    result = structure_result(reasoning_text)
+    result = structure_result(reasoning_text=reasoning_text, chat=chat)
 
     ## Filtering the required result for our memory
     required_memory = {
-        "last_task": result[0]["task_name"],
-        "summary": result[0]["summary"],
-        "used_search": result[0]["used_search"],
+        "last_task": result["task_name"],
+        "summary": result["summary"],
+        "used_search": result["used_search"],
     }
 
     ## Saving required memory after every successful execution
@@ -156,7 +153,7 @@ def execute_step(step, memory):
 
 
 ## Steps Planning
-def plan_steps():
+def plan_steps(chat):
     prompt = "Break the goal into clear, numbered steps."
     config = types.GenerateContentConfig(
             response_json_schema={
@@ -164,7 +161,7 @@ def plan_steps():
                 "items": PlanSteps.model_json_schema(),
             },
             response_mime_type="application/json",
-            system_instruction="""Answer within 20 words. Be specific to the point.
+            system_instruction="""Answer within 50 words. Be specific to the point.
                                 You are planning steps for an AI agent that SIMULATES all actions internally.
                                 Do NOT include steps that ask the user for input.
                                 Assume all required information is already available.
@@ -186,15 +183,15 @@ def plan_steps():
     return steps
 
 
-def run_agent():
+def run_agent(chat):
     ## steps planning
-    steps = plan_steps()
+    steps = plan_steps(chat)
     if not steps:
         print("❌ Planning failed. Agent cannot proceed. Sorry!")
         return
 
     for step in steps:
-        execute_step(step, memory)  ## individual step execution
+        execute_step(step, memory, chat)  ## individual step execution
     print(
         "\n************************ All Steps Completed. Have a Safe Journey!! ************************"
     )
@@ -220,4 +217,4 @@ if __name__ == "__main__":
     chat.send_message(modified_prompt)
 
     ## run agent--> plan steps--> execute steps(2-phases)
-    run_agent()
+    run_agent(chat)
