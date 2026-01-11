@@ -147,8 +147,14 @@ def execute_step(step, memory, chat):
     print("\n📝 Summary: ", result["summary"])
 
     if result["used_search"]:
-        print("🔍 Google Search was used in this step")
+        print("\n🔍 Google Search was used in this step")
     print("--------------------------------------")
+
+    if result["task_name"] == "Unknown":
+        print("❌ Step failed due to API / structuring issue.")
+        return False
+
+    return True
 
 
 ## Steps Planning
@@ -189,14 +195,29 @@ def run_agent(chat):
         print("❌ Planning failed. Agent cannot proceed. Sorry!")
         return
 
+    execution_failed=False
+
     for step in steps:
-        execute_step(step, memory, chat)  ## individual step execution
-    print(
-        "\n🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹"
-    )
-    print(
-        "\n- - - - - - - - - - - - - - - - - - -  ❌-❌-❌ - - - - - - - - - - - - - - - - - - - -"
-    )
+        success=execute_step(step, memory, chat)  ## individual step execution
+        if not success:
+            execution_failed=True
+            print("⛔ Stopping further execution due to failure.")
+            break
+
+        if execution_failed:
+            print(
+            "\n🛑 Journey planning could not be completed due to API limitations."
+            )
+            print(
+            "⚠️ Please retry after some time or switch to another model/API key."
+            )
+        else:
+            print(
+                "\n🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹"
+            )
+            print(
+                "\n- - - - - - - - - - - - - - - - - - -  ❌-❌-❌ - - - - - - - - - - - - - - - - - - - -"
+            )
 
 
 if __name__ == "__main__":
