@@ -15,12 +15,12 @@ def setup_logger():
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
 
-    console_formatter=logging.Formatter("🔹 %(levelname)s | %(message)s")
+    console_formatter=logging.Formatter("%(levelname)s | %(message)s")
     console_handler.setFormatter(console_formatter)
 
     #------------- FILE Handler -----------
     file_handler = RotatingFileHandler(
-        LOG_FILE, maxBytes=1_000_000, backupCount=3
+        LOG_FILE, maxBytes=1_000_000, backupCount=3, encoding="utf-8"
     )
 
     file_handler.setLevel(logging.DEBUG)

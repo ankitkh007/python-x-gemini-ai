@@ -11,7 +11,7 @@ logger=setup_logger()
 grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
 
-## Centralized prompt+config Wrapper for effiecient API error handling
+## Centralized prompt+config Wrapper for efficient API error handling
 def safe_send_message(chat, prompt, config=None, server_retries=2):
     try:
         return chat.send_message(message=prompt, config=config)
@@ -19,24 +19,24 @@ def safe_send_message(chat, prompt, config=None, server_retries=2):
     except ClientError as e:
         if e.code == 429:
             logger.warning(
-                "⚠️ API quota exhausted.💡Try changing the model or wait before retrying."
+                "API quota exhausted.Try changing the model or wait before retrying."
             )
             return None
         else:
-            logger.error("❌ Client error occurred.")
+            logger.error(" Client error occurred.")
             return None
 
     except ServerError:
         if server_retries > 0:
-            logger.error("⚠️ Service temporarily unavailable (503). Retrying in 5 seconds...")
+            logger.error("Service temporarily unavailable (503). Retrying in 5 seconds...")
             time.sleep(5)  ## pauses for 5 seconds and then retries
             return safe_send_message(chat, prompt, config, server_retries - 1)
         else:
-            logger.error("❌ Service unavailable after retries. Skipping step.")
+            logger.error("Service unavailable after retries. Skipping step.")
             return None
 
     except Exception as e:
-        logger.error(f"❌ Unexpected error occurred: {e}")
+        logger.error(f"Unexpected error occurred: {e}")
         return None
 
 
@@ -144,17 +144,17 @@ def execute_step(step, memory, chat):
     if dict_to_remove in memory:
         memory.remove(dict_to_remove)
 
-    logger.info("--------------------------------------")
-    logger.info(f"🧭 Ongoing Task :  {result['task_name']}")
-    logger.info(f"⚙️  Action Performed:  {result['action_performed']}")
-    logger.info(f"📝 Summary: {result['summary']}")
+    print("--------------------------------------")
+    print("\n🧭 Ongoing Task : ",  result["task_name"])
+    print("\n⚙️  Action Performed: ",  result["action_performed"])
+    print("\n📝 Summary: " ,result["summary"])
 
     if result["used_search"]:
-        logger.info("🔍 Google Search was used in this step")
-    logger.info("--------------------------------------")
+        print("\n🔍 Google Search was used in this step")
+    print("--------------------------------------")
 
     if result["task_name"] == "Unknown":
-        logger.error("❌ Step failed due to API / structuring issue.")
+        logger.error(" Step failed due to API / structuring issue.")
         return False
 
     return True
@@ -181,7 +181,7 @@ def plan_steps(chat):
 
     ## Error handling
     if response is None:
-        logger.error("❌ Failed to generate plan. Please try again later.")
+        logger.error(" Failed to generate plan. Please try again later.")
         return []  ## if steps planning failed return empty list
 
     plans = json.loads(response.text)
@@ -198,7 +198,7 @@ def run_agent(chat):
     ## steps planning
     steps = plan_steps(chat)
     if not steps:
-        logger.error("❌ Planning failed. Agent cannot proceed. Sorry!")
+        logger.error(" Planning failed. Agent cannot proceed. Sorry!")
         return
 
     execution_failed=False
@@ -207,20 +207,20 @@ def run_agent(chat):
         success=execute_step(step, memory, chat)  ## individual step execution
         if not success:
             execution_failed=True
-            logger.warning("⛔ Stopping further execution due to failure.")
+            logger.warning(" Stopping further execution due to failure.")
             break
 
     if execution_failed:
         logger.error(
-        "\n🛑 Journey planning could not be completed due to API limitations."
+        " Journey planning could not be completed due to API limitations."
         )
         logger.error(
-        "⚠️ Please retry after some time or switch to another model/API key."
+        " Please retry after some time or switch to another model/API key."
         )
     else:
-        logger.info("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
-        logger.info("🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🚆✨🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹")
-        logger.info("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+        print("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+        print("\n🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🚆✨🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹")
+        print("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
 
 if __name__ == "__main__":
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     modified_prompt = f"""You're an expert virtual travel agent, having a very high experience of planning railway journeys in India.
     Your goal is {goal}. For know you just acknowledge the goal and going forward I'll ask you to create the plan and execute those plans."""
 
-    chat = client.chats.create(model="gemini-2.5-flash-lite")
+    chat = client.chats.create(model="gemini-2.5-flash")
 
     chat.send_message(modified_prompt)
 
