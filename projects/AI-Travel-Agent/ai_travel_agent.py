@@ -63,7 +63,8 @@ class ExecuteSteps(BaseModel):
 ## Phase 1(Execute Steps)
 def reason_and_search(step, memory, chat):
     prompt = f"""
-            Last task done: {memory[-1]["last_task"]}, summary: {memory[-1]["summary"]}
+            Last task done: {memory["working_memory"].get("last_task") or "None"}, 
+            summary: {memory["working_memory"].get("summary") or "No previous context"}
         
             Now execute this step: {step}. Explain briefly what you did
             """
@@ -129,20 +130,24 @@ def execute_step(step, memory, chat):
     # ---- PHASE 2 ----
     result = structure_result(reasoning_text=reasoning_text, chat=chat)
 
-    ## Filtering the required result for our memory
-    required_memory = {
+    # ------ FAILURE CHECK FIRST --------
+    if result["task_name"] == "Unknown":
+        logger.error(" Step failed due to API / structuring issue.")
+        return False
+
+    ## Updating working memory(overwrite)
+    memory["working_memory"].update({
         "last_task": result["task_name"],
         "summary": result["summary"],
         "used_search": result["used_search"],
-    }
+    })
 
-    ## Saving required memory after every successful execution
-    memory.append(required_memory)
-
-    ## Removes dummy dictionary after initial use
-    dict_to_remove = {"last_task": None, "summary": None, "used_search": None}
-    if dict_to_remove in memory:
-        memory.remove(dict_to_remove)
+    ## Append episodic memory (history)
+    memory["episodic_memory"].append({
+        "task": result["task_name"],
+        "summary": result["summary"],
+        "used_search": result["used_search"]
+    })
 
     print("--------------------------------------")
     print("\n🧭 Ongoing Task : ",  result["task_name"])
@@ -152,10 +157,6 @@ def execute_step(step, memory, chat):
     if result["used_search"]:
         print("\n🔍 Google Search was used in this step")
     print("--------------------------------------")
-
-    if result["task_name"] == "Unknown":
-        logger.error(" Step failed due to API / structuring issue.")
-        return False
 
     return True
 
@@ -191,10 +192,7 @@ def plan_steps(chat):
     return steps
 
 
-def run_agent(chat):
-    ## Adding memory so that our agent gets the context of what it has already done
-    memory = [{"last_task": None, "summary": None, "used_search": None}]
-
+def run_agent(chat, memory):
     ## steps planning
     steps = plan_steps(chat)
     if not steps:
@@ -235,9 +233,19 @@ if __name__ == "__main__":
     modified_prompt = f"""You're an expert virtual travel agent, having a very high experience of planning railway journeys in India.
     Your goal is {goal}. For know you just acknowledge the goal and going forward I'll ask you to create the plan and execute those plans."""
 
+    memory = {
+        "working_memory": {
+            "current_goal": goal,
+            "last_task": None,
+            "summary": None,
+            "used_search": None
+        },
+        "episodic_memory": []
+    }
+
     chat = client.chats.create(model="gemini-2.5-flash")
 
     chat.send_message(modified_prompt)
 
     ## run agent--> plan steps--> execute steps(2-phases)
-    run_agent(chat)
+    run_agent(chat, memory)
