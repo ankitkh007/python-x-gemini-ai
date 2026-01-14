@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field
 from google.genai.errors import ClientError, ServerError
 import json
 import time
+from core.logger import setup_logger
+
+logger=setup_logger()
 
 grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
@@ -15,25 +18,25 @@ def safe_send_message(chat, prompt, config=None, server_retries=2):
 
     except ClientError as e:
         if e.code == 429:
-            print(
+            logger.warning(
                 "⚠️ API quota exhausted.💡Try changing the model or wait before retrying."
             )
             return None
         else:
-            print("❌ Client error occurred.")
+            logger.error("❌ Client error occurred.")
             return None
 
     except ServerError:
         if server_retries > 0:
-            print("⚠️ Service temporarily unavailable (503). Retrying in 5 seconds...")
+            logger.error("⚠️ Service temporarily unavailable (503). Retrying in 5 seconds...")
             time.sleep(5)  ## pauses for 5 seconds and then retries
             return safe_send_message(chat, prompt, config, server_retries - 1)
         else:
-            print("❌ Service unavailable after retries. Skipping step.")
+            logger.error("❌ Service unavailable after retries. Skipping step.")
             return None
 
-    except Exception:
-        print("❌ Unexpected error occurred. Aborting...")
+    except Exception as e:
+        logger.error(f"❌ Unexpected error occurred: {e}")
         return None
 
 
@@ -54,7 +57,7 @@ class ExecuteSteps(BaseModel):
 
 
 ## Adding memory so that our agent gets the context of what it has already done
-memory = [{"last_task": None, "summary": None, "used_search": None}]
+# memory = [{"last_task": None, "summary": None, "used_search": None}]
 
 
 ## Phase 1(Execute Steps)
@@ -141,17 +144,17 @@ def execute_step(step, memory, chat):
     if dict_to_remove in memory:
         memory.remove(dict_to_remove)
 
-    print("--------------------------------------")
-    print("\n🧭 Ongoing Task : ", result["task_name"])
-    print("\n⚙️  Action Performed: ", result["action_performed"])
-    print("\n📝 Summary: ", result["summary"])
+    logger.info("--------------------------------------")
+    logger.info(f"🧭 Ongoing Task :  {result['task_name']}")
+    logger.info(f"⚙️  Action Performed:  {result['action_performed']}")
+    logger.info(f"📝 Summary: {result['summary']}")
 
     if result["used_search"]:
-        print("\n🔍 Google Search was used in this step")
-    print("--------------------------------------")
+        logger.info("🔍 Google Search was used in this step")
+    logger.info("--------------------------------------")
 
     if result["task_name"] == "Unknown":
-        print("❌ Step failed due to API / structuring issue.")
+        logger.error("❌ Step failed due to API / structuring issue.")
         return False
 
     return True
@@ -178,7 +181,7 @@ def plan_steps(chat):
 
     ## Error handling
     if response is None:
-        print("❌ Failed to generate plan. Please try again later.")
+        logger.error("❌ Failed to generate plan. Please try again later.")
         return []  ## if steps planning failed return empty list
 
     plans = json.loads(response.text)
@@ -189,10 +192,13 @@ def plan_steps(chat):
 
 
 def run_agent(chat):
+    ## Adding memory so that our agent gets the context of what it has already done
+    memory = [{"last_task": None, "summary": None, "used_search": None}]
+
     ## steps planning
     steps = plan_steps(chat)
     if not steps:
-        print("❌ Planning failed. Agent cannot proceed. Sorry!")
+        logger.error("❌ Planning failed. Agent cannot proceed. Sorry!")
         return
 
     execution_failed=False
@@ -201,23 +207,20 @@ def run_agent(chat):
         success=execute_step(step, memory, chat)  ## individual step execution
         if not success:
             execution_failed=True
-            print("⛔ Stopping further execution due to failure.")
+            logger.warning("⛔ Stopping further execution due to failure.")
             break
 
     if execution_failed:
-        print(
+        logger.error(
         "\n🛑 Journey planning could not be completed due to API limitations."
         )
-        print(
+        logger.error(
         "⚠️ Please retry after some time or switch to another model/API key."
         )
     else:
-        print(
-            "\n🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹"
-        )
-        print(
-            "\n- - - - - - - - - - - - - - - - - - -  ❌-❌-❌ - - - - - - - - - - - - - - - - - - - -"
-        )
+        logger.info("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+        logger.info("🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹 All Steps Completed 🏁. Have a Safe Journey!! 🚆✨🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹")
+        logger.info("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
 
 if __name__ == "__main__":
