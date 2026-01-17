@@ -158,9 +158,12 @@ def execute_step(step, memory, chat):
 
 
 ## Steps Planning
-def plan_steps(chat):
-    prompt = f"""Break the goal into clear, numbered steps.
-                Goal: {memory["working_memory"]["current_goal"]} """
+def plan_steps(chat, memory):
+    prompt = f"""Break the goal into clear, numbered, executable steps.
+                Goal: {memory["working_memory"]["current_goal"]} 
+                Journey constraints (already known):
+                {json.dumps(memory["working_memory"]["trip_details"], indent=2)}
+            """
     config = types.GenerateContentConfig(
             response_json_schema={
                 "type": "array",
@@ -171,6 +174,7 @@ def plan_steps(chat):
                                 You are planning steps for an AI agent that SIMULATES all actions internally.
                                 Do NOT include steps that ask the user for input.
                                 Assume all required information is already available.
+                                Use the provided journey constraints (passengers, age, class, date) while planning steps.
                                 Generate only executable, simulated steps.
                                 """,
         )
@@ -225,22 +229,54 @@ if __name__ == "__main__":
     destination = input("Enter your Destination: ")
     print("--------------------------------------")
 
-    goal = f"To Book a Railway ticket from {source} to {destination}."
+    journey_date=input("Enter travel date(eg. 7th February 2026): ")
+    print("--------------------------------------")
+    no_of_passengers=int(input("\nEnter the number of passengers: "))
+    print("--------------------------------------")
 
-    modified_prompt = f"""You're an expert virtual travel agent, having a very high experience of planning railway journeys in India.
-    Your goal is {goal}. For know you just acknowledge the goal and going forward I'll ask you to create the plan and execute those plans."""
+    passengers=[]
+    for i in range(no_of_passengers):
+        print(f"\nEnter details of Passenger {i+1}: ")
+        name=input("Name: ")
+        age=int(input("Age: "))
+        gender=input("Gender(M/F/Other): ").strip().upper()
+        passengers.append({"name":name, "age": age, "gender": gender})
+        print("--------------------------------------")
+
+    class_type=input("Enter preferred class (1st AC, 2nd AC, 3rd AC, Sleeper, General): ").strip()
+    print("--------------------------------------")
+    
+    trip_details={
+        "source": source,
+        "destination": destination,
+        "journey_date": journey_date,
+        "passenger_count": no_of_passengers,
+        "passengers_detail": passengers,
+        "preferred_class": class_type
+    }
+
+
+    goal = f"To Book a Railway ticket from {source} to {destination} on {journey_date}."
+
+    modified_prompt = f"""You are an expert Indian railway travel agent. Your goal is {goal}.
+                    All passenger details, preferences, and journey constraints
+                    are already known and stored in memory.
+                    Plan and execute accordingly.
+                    Do NOT ask the user for any information.
+                    """
 
     memory = {
         "working_memory": {
             "current_goal": goal,
             "last_task": None,
             "summary": None,
-            "used_search": None
+            "used_search": None,
+            "trip_details": trip_details
         },
         "episodic_memory": []
     }
 
-    chat = client.chats.create(model="gemini-2.5-flash")
+    chat = client.chats.create(model="gemini-2.5-flash-lite")
 
     chat.send_message(modified_prompt)
 
