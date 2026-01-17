@@ -12,6 +12,9 @@ As a practical use case, the framework implements an **AI Travel Agent** that pl
 - 🧠 Agent-based task planning and execution
 - 🔁 Two-phase execution (Reasoning → Structured Output)
 - 📦 Structured JSON responses using Pydantic schemas
+- 🧾 Working & episodic memory for contextual continuity
+- 🚆 Constraint-aware railway journey planning
+- 🧍 Multi-passenger input handling
 - 🔍 Optional Google Search tool grounding
 - 🧾 Memory-based context tracking across steps
 - ⚠️ Robust API error handling (quota exhaustion, retries, graceful fallback)
