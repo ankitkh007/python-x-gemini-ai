@@ -56,10 +56,6 @@ class ExecuteSteps(BaseModel):
     )
 
 
-## Adding memory so that our agent gets the context of what it has already done
-# memory = [{"last_task": None, "summary": None, "used_search": None}]
-
-
 ## Phase 1(Execute Steps)
 def reason_and_search(step, memory, chat):
     prompt = f"""
@@ -163,7 +159,8 @@ def execute_step(step, memory, chat):
 
 ## Steps Planning
 def plan_steps(chat):
-    prompt = "Break the goal into clear, numbered steps."
+    prompt = f"""Break the goal into clear, numbered steps.
+                Goal: {memory["working_memory"]["current_goal"]} """
     config = types.GenerateContentConfig(
             response_json_schema={
                 "type": "array",
@@ -194,7 +191,7 @@ def plan_steps(chat):
 
 def run_agent(chat, memory):
     ## steps planning
-    steps = plan_steps(chat)
+    steps = plan_steps(chat, memory)
     if not steps:
         logger.error(" Planning failed. Agent cannot proceed. Sorry!")
         return
